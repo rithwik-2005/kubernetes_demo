@@ -1,0 +1,249 @@
+# =============================================================================
+# app-deployments.yaml
+# =============================================================================
+# PURPOSE:
+#   Creates 3 Deployments. Each Deployment uses nodeSelector to pin its 2 pods
+#   onto one specific node. All 3 apps run independently on separate nodes.
+#
+# NODE LAYOUT AFTER APPLYING THIS FILE:
+#   minikube      (node 1) → app1-pod-1 + app1-pod-2
+#   minikube-m02  (node 2) → app2-pod-1 + app2-pod-2
+#   minikube-m03  (node 3) → app3-pod-1 + app3-pod-2
+#
+# KEY CONCEPT — nodeSelector:
+#   kubernetes.io/hostname is a built-in label that Kubernetes automatically
+#   stamps on every node. Its value equals the node name exactly.
+#   We use this to force pods onto a specific node without any manual labelling.
+# =============================================================================
+
+
+# =============================================================================
+# DEPLOYMENT 1 — APP1 — pinned to node: minikube
+# =============================================================================
+
+apiVersion: apps/v1
+# apiVersion: tells Kubernetes which API group to use.
+# apps/v1 is required for Deployments, DaemonSets, and StatefulSets.
+# v1 alone (without apps/) is only for core resources like Pods and Services.
+
+kind: Deployment
+# kind: the type of Kubernetes resource we are creating.
+# A Deployment manages a set of identical pods and ensures the desired
+# number are always running. If a pod crashes, Deployment restarts it.
+
+metadata:
+  name: app1-deployment
+  # name: unique identifier for this Deployment inside the cluster.
+  # Used in kubectl commands e.g. kubectl describe deployment app1-deployment
+
+  labels:
+    app: app1
+    # labels on the Deployment object itself — not the pods.
+    # Used to identify and group the Deployment resource.
+
+spec:
+# spec: defines the desired state — what we want Kubernetes to create and maintain.
+
+  replicas: 2
+  # replicas: how many identical pod copies to create and keep running.
+  # Both replicas will land on node "minikube" because of nodeSelector below.
+  # If one pod crashes, Kubernetes automatically creates a replacement.
+
+  selector:
+    matchLabels:
+      app: app1
+    # selector: tells this Deployment which pods it owns and manages.
+    # It watches for pods with the label app=app1.
+    # MUST match the labels in template.metadata.labels below.
+    # If these don't match, Deployment cannot manage the pods it creates.
+
+  template:
+  # template: the blueprint used to create each pod.
+  # Every pod this Deployment creates is built from this template.
+
+    metadata:
+      labels:
+        app: app1
+        # Every pod gets this label stamped on it at creation time.
+        # This is what the Service uses to find and route traffic to these pods.
+        # Rule: template labels MUST match selector.matchLabels above.
+
+    spec:
+    # spec inside template: defines what runs inside each pod.
+
+      nodeSelector:
+        kubernetes.io/hostname: minikube
+        # nodeSelector: a constraint that tells the Kubernetes scheduler
+        # to only place this pod on a node where this label matches.
+        #
+        # kubernetes.io/hostname is automatically set on every node by Kubernetes.
+        # Its value equals the node name. So this line means:
+        # "only schedule this pod on the node named minikube"
+        #
+        # Since replicas: 2, both pods get this constraint → both land on node 1.
+
+      containers:
+        - name: app1-container
+          # name: identifier for this container within the pod.
+          # A pod can have multiple containers — each needs a unique name.
+
+          image: hashicorp/http-echo
+          # image: the Docker image to pull and run.
+          # http-echo is a tiny Go server that returns whatever text you pass it.
+          # Perfect for testing routing without building your own image.
+
+          args:
+            - "-text=Hello from APP1"
+            # args: command-line arguments passed to the container at startup.
+            # http-echo reads -text and returns it as the HTTP response body.
+            # This is how we tell the pods apart when testing.
+
+          ports:
+            - containerPort: 5678
+              # containerPort: documents which port this container listens on.
+              # http-echo defaults to port 5678.
+              # This MUST match the targetPort in services.yaml.
+              # Note: this is informational only — it does not open or expose the port.
+
+          readinessProbe:
+            # readinessProbe: Kubernetes checks this before sending traffic to the pod.
+            # If the probe fails, the pod is removed from the Service endpoints.
+            # This prevents routing to pods that are still starting up.
+            httpGet:
+              path: /
+              port: 5678
+              # Makes an HTTP GET request to / on port 5678.
+              # http-echo responds with 200 OK → probe passes → pod receives traffic.
+            initialDelaySeconds: 5
+            # Wait 5 seconds after the container starts before the first check.
+            # Gives the app time to boot.
+            periodSeconds: 10
+            # Re-run the check every 10 seconds to confirm the pod stays healthy.
+
+          resources:
+            requests:
+              cpu: "50m"
+              # 50 millicores = 0.05 of one CPU core.
+              # This is the minimum CPU guaranteed to this container.
+              # The scheduler uses this to decide which node can fit the pod.
+              memory: "64Mi"
+              # 64 Mebibytes of RAM guaranteed to this container.
+            limits:
+              cpu: "200m"
+              # Maximum CPU this container can use.
+              # If it tries to use more, Kubernetes throttles it.
+              memory: "128Mi"
+              # Maximum RAM this container can use.
+              # If it exceeds this, Kubernetes kills and restarts the container.
+
+---
+# --- is the YAML document separator.
+# It tells kubectl that a new resource definition starts here.
+# This lets us put multiple resources in one file instead of creating separate files.
+
+
+# =============================================================================
+# DEPLOYMENT 2 — APP2 — pinned to node: minikube-m02
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2-deployment
+  labels:
+    app: app2
+spec:
+  replicas: 2
+  # 2 pods — both will land on minikube-m02 because of nodeSelector below
+
+  selector:
+    matchLabels:
+      app: app2
+      # Deployment manages pods with label app=app2
+
+  template:
+    metadata:
+      labels:
+        app: app2
+        # Every pod created by this Deployment gets the label app=app2
+        # app2-service uses this label to find these pods
+
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: minikube-m02
+        # Pins BOTH pods to node 2 (minikube-m02)
+
+      containers:
+        - name: app2-container
+          image: hashicorp/http-echo
+          args:
+            - "-text=Hello from APP2"
+            # Returns this text — identifies which app responded
+          ports:
+            - containerPort: 5678
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5678
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+---
+
+# =============================================================================
+# DEPLOYMENT 3 — APP3 — pinned to node: minikube-m03
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app3-deployment
+  labels:
+    app: app3
+spec:
+  replicas: 2
+  # 2 pods — both will land on minikube-m03 because of nodeSelector below
+
+  selector:
+    matchLabels:
+      app: app3
+
+  template:
+    metadata:
+      labels:
+        app: app3
+        # Every pod gets label app=app3
+        # app3-service uses this label to find these pods
+
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: minikube-m03
+        # Pins BOTH pods to node 3 (minikube-m03)
+
+      containers:
+        - name: app3-container
+          image: hashicorp/http-echo
+          args:
+            - "-text=Hello from APP3"
+          ports:
+            - containerPort: 5678
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5678
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
