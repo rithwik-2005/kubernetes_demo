@@ -1,0 +1,129 @@
+# =============================================================================
+# services.yaml
+# =============================================================================
+# PURPOSE:
+#   Creates 3 ClusterIP Services — one per app.
+#   Each Service uses a label selector to find its pods and load balance
+#   traffic between them regardless of which node the pods are on.
+#
+# HOW A SERVICE WORKS:
+#   1. You define selector: app=app1
+#   2. Kubernetes watches for all pods with that label (across all nodes)
+#   3. Service maintains a live list of those pod IPs (called Endpoints)
+#   4. Incoming traffic is round-robin load balanced across those pods
+#   5. If a pod dies, it is removed from the Endpoints list automatically
+#
+# WHY ClusterIP:
+#   ClusterIP means the Service is only reachable from inside the cluster.
+#   The Nginx Ingress Controller lives inside the cluster so it can reach it.
+#   We never expose Services directly — Ingress handles all external traffic.
+# =============================================================================
+
+
+# =============================================================================
+# SERVICE 1 — for APP1 pods
+# =============================================================================
+
+apiVersion: v1
+# apiVersion: v1 is the core API group.
+# Services, Pods, ConfigMaps, and Secrets all use v1.
+# Note: no "apps/" prefix unlike Deployments.
+
+kind: Service
+# kind: the type of resource we are creating.
+# A Service gives a stable IP and DNS name to a group of pods.
+# Even if pods are replaced (new IPs), the Service IP stays the same.
+
+metadata:
+  name: app1-service
+  # name: must match exactly what you write in ingress.yaml under backend.service.name
+  # The Ingress controller uses this name to find the Service.
+
+spec:
+
+  type: ClusterIP
+  # type: ClusterIP is the default Service type.
+  # ClusterIP = only accessible from inside the Kubernetes cluster.
+  # The Ingress controller (also inside the cluster) talks to this Service.
+  # Never expose ClusterIP directly to the internet.
+  #
+  # Other types for reference:
+  #   NodePort    = opens a port on each node (not needed here)
+  #   LoadBalancer = provisions a cloud load balancer (not needed here)
+
+  selector:
+    app: app1
+    # selector: the label the Service uses to find its target pods.
+    # This MUST match the labels.app value in app-deployments.yaml template.
+    # The Service continuously watches for pods with app=app1 across ALL nodes.
+    # It does not care which node the pods are on — just the label.
+    #
+    # Right now app=app1 pods are on node "minikube" (both replicas).
+    # Service finds them by label, not by node name.
+
+  ports:
+    - protocol: TCP
+      # protocol: TCP is used for HTTP traffic.
+
+      port: 80
+      # port: the port this Service exposes INSIDE the cluster.
+      # The Ingress controller sends traffic to app1-service:80
+      # This is what you write in ingress.yaml under port.number
+
+      targetPort: 5678
+      # targetPort: the port the container inside the pod is listening on.
+      # Must match containerPort in app-deployments.yaml (which is 5678).
+      # Service translates: incoming :80 → pod's :5678
+
+---
+
+# =============================================================================
+# SERVICE 2 — for APP2 pods
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: app2-service
+  # Ingress routes /app2 traffic to this Service
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: app2
+    # Finds pods with label app=app2
+    # Those pods are on node minikube-m02 (both replicas)
+    # Service just needs the label — node location is irrelevant
+
+  ports:
+    - protocol: TCP
+      port: 80
+      # Ingress sends traffic to app2-service:80
+      targetPort: 5678
+      # Service forwards it to the container's port 5678
+
+---
+
+# =============================================================================
+# SERVICE 3 — for APP3 pods
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: app3-service
+  # Ingress routes /app3 traffic to this Service
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: app3
+    # Finds pods with label app=app3
+    # Those pods are on node minikube-m03 (both replicas)
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5678
