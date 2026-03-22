@@ -1,0 +1,122 @@
+# =============================================================================
+# ingress.yaml
+# =============================================================================
+# PURPOSE:
+#   Defines path-based routing rules for the Nginx Ingress Controller.
+#   Tells the controller: when a request comes in for a specific URL path,
+#   forward it to a specific Service inside the cluster.
+#
+# HOW IT WORKS — step by step:
+#   1. Browser sends:  GET http://127.0.0.1/app1
+#   2. minikube tunnel routes this to the Nginx Ingress Controller pod
+#   3. Nginx reads these rules and matches the path /app1
+#   4. Nginx forwards the request to app1-service:80 inside the cluster
+#   5. app1-service load balances between app1-pod-1 and app1-pod-2
+#   6. One of the pods responds: "Hello from APP1"
+#
+# IMPORTANT:
+#   The Ingress resource is just a configuration object stored in Kubernetes.
+#   It does nothing by itself. The Nginx Ingress Controller (installed via
+#   minikube addons enable ingress) reads this configuration and acts on it.
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+# apiVersion: networking.k8s.io/v1 is the API group for Ingress resources.
+# This was promoted from networking.k8s.io/v1beta1 in Kubernetes 1.19.
+# Always use v1 — v1beta1 is removed in newer clusters.
+
+kind: Ingress
+# kind: the type of resource.
+# An Ingress defines HTTP routing rules for external traffic entering the cluster.
+
+metadata:
+  name: path-based-ingress
+  # name: identifier for this Ingress resource.
+  # Used in: kubectl describe ingress path-based-ingress
+
+spec:
+
+  ingressClassName: nginx
+  # ingressClassName: tells Kubernetes which Ingress Controller owns this resource.
+  # Multiple controllers can run in one cluster (nginx, traefik, aws-alb etc).
+  # This field selects which one reads and acts on these rules.
+  # "nginx" matches the class name registered by: minikube addons enable ingress
+  # Without this field, modern Kubernetes clusters ignore the Ingress resource.
+
+  rules:
+  # rules: the list of routing rules.
+  # Each rule can match on a hostname (host:) and/or URL paths (http.paths).
+  # We are using path-based routing only — no hostname matching.
+
+    - http:
+      # http: this rule applies to HTTP traffic on any hostname.
+      # In production you would add: host: myapp.example.com
+      # For Minikube local testing, we leave host empty to match all hostnames.
+
+        paths:
+        # paths: list of URL path rules evaluated top to bottom.
+        # The FIRST matching rule wins — order matters.
+
+          # ── ROUTE 1: /app1 → app1-service ──────────────────────────────────
+          - path: /app1
+            # path: the URL path prefix to match.
+            # Any request whose URL starts with /app1 will match this rule.
+            # Examples that match: /app1   /app1/   /app1/products   /app1/about
+
+            pathType: Prefix
+            # pathType: controls how the path string is matched.
+            #
+            # Prefix  = matches any URL that STARTS WITH this path
+            #           /app1 matches /app1, /app1/, /app1/anything
+            #
+            # Exact   = matches the URL EXACTLY only
+            #           /app1 would ONLY match /app1, not /app1/ or /app1/foo
+            #
+            # ImplementationSpecific = controller decides the matching logic
+            #
+            # Use Prefix for most cases — it is the most flexible.
+
+            backend:
+            # backend: where to forward requests that match this path.
+
+              service:
+                name: app1-service
+                # name: the Service to forward matching traffic to.
+                # Must exactly match metadata.name in services.yaml.
+
+                port:
+                  number: 80
+                  # number: the port on the Service to connect to.
+                  # Must match spec.ports.port in services.yaml (which is 80).
+                  # The Service then forwards it to the container's targetPort 5678.
+
+          # ── ROUTE 2: /app2 → app2-service ──────────────────────────────────
+          - path: /app2
+            pathType: Prefix
+            backend:
+              service:
+                name: app2-service
+                port:
+                  number: 80
+
+          # ── ROUTE 3: /app3 → app3-service ──────────────────────────────────
+          - path: /app3
+            pathType: Prefix
+            backend:
+              service:
+                name: app3-service
+                port:
+                  number: 80
+
+# =============================================================================
+# WHAT HAPPENS IF NO PATH MATCHES?
+#   If a request comes in for a path not listed here (e.g. /unknown),
+#   the Nginx controller returns 404 Not Found.
+#   To add a catch-all default backend, add this at the spec level:
+#
+#   defaultBackend:
+#     service:
+#       name: app1-service
+#       port:
+#         number: 80
+# =============================================================================
