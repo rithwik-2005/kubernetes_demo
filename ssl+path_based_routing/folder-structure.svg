@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="270" viewBox="0 0 560 270" font-family="Arial, sans-serif">
+  <rect width="560" height="270" fill="#1e1e1e" rx="10"/>
+  <text x="20" y="28" font-size="13" font-weight="bold" fill="#cccccc">VS Code — Explorer</text>
+  <line x1="0" y1="36" x2="560" y2="36" stroke="#444" stroke-width="1"/>
+
+  <text x="20" y="66" font-size="13" fill="#e2c08d">▶  ingress-ssl-path-routing</text>
+
+  <text x="50" y="98"  font-size="12" fill="#4ec9b0">📄  app-deployments.yaml</text>
+  <text x="270" y="98"  font-size="11" fill="#6a9955">← 3 Deployments + nodeSelector</text>
+
+  <text x="50" y="124" font-size="12" fill="#4ec9b0">📄  services.yaml</text>
+  <text x="270" y="124" font-size="11" fill="#6a9955">← 3 ClusterIP Services</text>
+
+  <text x="50" y="150" font-size="12" fill="#4ec9b0">📄  ingress.yaml</text>
+  <text x="270" y="150" font-size="11" fill="#6a9955">← TLS block + path rules</text>
+
+  <text x="50" y="176" font-size="12" fill="#ce9178">📄  generate-cert.bat</text>
+  <text x="270" y="176" font-size="11" fill="#6a9955">← creates tls.crt + tls.key</text>
+
+  <text x="50" y="202" font-size="12" fill="#569cd6">📘  README.md</text>
+  <text x="270" y="202" font-size="11" fill="#6a9955">← Full guide + SSL steps</text>
+
+  <!-- Generated files note -->
+  <rect x="20" y="218" width="520" height="40" rx="4" fill="#2d2d2d"/>
+  <text x="30" y="234" font-size="11" fill="#888">Generated after running generate-cert.bat:</text>
+  <text x="30" y="250" font-size="11" fill="#9cdcfe">tls.crt   tls.key   (do not commit these to git)</text>
+</svg>

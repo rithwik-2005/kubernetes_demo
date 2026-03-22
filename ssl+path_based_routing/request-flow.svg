@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="420" viewBox="0 0 900 420" font-family="Arial, sans-serif">
+  <rect width="900" height="420" fill="#f8f9fa" rx="12"/>
+  <text x="450" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a1a2e">SSL Request Flow — TLS Terminates at Ingress</text>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+    <marker id="arrs" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#43a047" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <!-- Step 1: Browser -->
+  <rect x="14" y="60" width="140" height="76" rx="8" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="2"/>
+  <text x="84" y="82" text-anchor="middle" font-size="12" font-weight="bold" fill="#283593">1. Browser</text>
+  <text x="84" y="100" text-anchor="middle" font-size="10" fill="#3949ab">HTTPS request</text>
+  <text x="84" y="116" text-anchor="middle" font-size="10" fill="#3949ab">GET /app2</text>
+  <text x="84" y="130" text-anchor="middle" font-size="10" fill="#1b5e20">encrypted</text>
+
+  <!-- Arrow encrypted -->
+  <line x1="154" y1="98" x2="194" y2="98" stroke="#43a047" stroke-width="2" marker-end="url(#arrs)"/>
+  <text x="174" y="91" text-anchor="middle" font-size="9" fill="#43a047">TLS</text>
+
+  <!-- Step 2: Ingress TLS -->
+  <rect x="194" y="60" width="170" height="76" rx="8" fill="#fce4ec" stroke="#e91e63" stroke-width="2"/>
+  <text x="279" y="82" text-anchor="middle" font-size="12" font-weight="bold" fill="#880e4f">2. Nginx Ingress</text>
+  <text x="279" y="98" text-anchor="middle" font-size="10" fill="#c2185b">reads TLS Secret</text>
+  <text x="279" y="114" text-anchor="middle" font-size="10" fill="#c2185b">decrypts HTTPS</text>
+  <text x="279" y="130" text-anchor="middle" font-size="10" fill="#c2185b">matches /app2 path</text>
+
+  <!-- Arrow plain HTTP -->
+  <line x1="364" y1="98" x2="404" y2="98" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="384" y="91" text-anchor="middle" font-size="9" fill="#888">HTTP</text>
+
+  <!-- Step 3: Service -->
+  <rect x="404" y="60" width="160" height="76" rx="8" fill="#e0f2f1" stroke="#009688" stroke-width="2"/>
+  <text x="484" y="82" text-anchor="middle" font-size="12" font-weight="bold" fill="#004d40">3. app2-service</text>
+  <text x="484" y="98" text-anchor="middle" font-size="10" fill="#00695c">selector: app=app2</text>
+  <text x="484" y="114" text-anchor="middle" font-size="10" fill="#00695c">ClusterIP :80</text>
+  <text x="484" y="130" text-anchor="middle" font-size="10" fill="#00695c">load balances</text>
+
+  <!-- Arrows to pods -->
+  <line x1="564" y1="80" x2="640" y2="64" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="564" y1="116" x2="640" y2="132" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="602" y="76" text-anchor="middle" font-size="9" fill="#888">:5678</text>
+
+  <!-- Pod 1 -->
+  <rect x="640" y="44" width="130" height="56" rx="8" fill="#80cbc4" stroke="#009688" stroke-width="2"/>
+  <text x="705" y="66" text-anchor="middle" font-size="11" font-weight="bold" fill="#001a17">app2 — pod 1</text>
+  <text x="705" y="82" text-anchor="middle" font-size="10" fill="#002920">Hello from APP2</text>
+
+  <!-- Pod 2 -->
+  <rect x="640" y="116" width="130" height="56" rx="8" fill="#80cbc4" stroke="#009688" stroke-width="2"/>
+  <text x="705" y="138" text-anchor="middle" font-size="11" font-weight="bold" fill="#001a17">app2 — pod 2</text>
+  <text x="705" y="154" text-anchor="middle" font-size="10" fill="#002920">Hello from APP2</text>
+
+  <!-- TLS secret note -->
+  <rect x="194" y="156" width="170" height="50" rx="6" fill="#fff3e0" stroke="#ff9800" stroke-width="1.5"/>
+  <text x="279" y="175" text-anchor="middle" font-size="11" font-weight="bold" fill="#e65100">TLS Secret</text>
+  <text x="279" y="193" text-anchor="middle" font-size="10" fill="#bf360c">kubectl create secret tls</text>
+
+  <!-- Annotation boxes -->
+  <rect x="14" y="200" width="860" height="68" rx="8" fill="#e8f5e9" stroke="#43a047" stroke-width="1.5"/>
+  <text x="450" y="220" text-anchor="middle" font-size="12" font-weight="bold" fill="#1b5e20">What TLS termination at Ingress means</text>
+  <text x="24" y="242" font-size="11" fill="#2e7d32">HTTPS (encrypted):  Browser → minikube tunnel → Nginx Ingress   — the cert lives here, decryption happens here</text>
+  <text x="24" y="258" font-size="11" fill="#2e7d32">HTTP  (plain):       Nginx Ingress → Service → Pod              — internal cluster traffic is never encrypted</text>
+
+  <!-- How cert is stored -->
+  <rect x="14" y="282" width="860" height="120" rx="8" fill="#eceff1" stroke="#b0bec5" stroke-width="1"/>
+  <text x="450" y="302" text-anchor="middle" font-size="13" font-weight="bold" fill="#263238">3 steps to create the TLS Secret before applying ingress.yaml</text>
+  <text x="24" y="324" font-size="11" fill="#37474f">Step 1 — Generate self-signed cert:</text>
+  <text x="24" y="342" font-size="11" fill="#1565c0" font-family="Courier New">  openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=127.0.0.1"</text>
+  <text x="24" y="362" font-size="11" fill="#37474f">Step 2 — Store it in Kubernetes as a TLS Secret:</text>
+  <text x="24" y="380" font-size="11" fill="#1565c0" font-family="Courier New">  kubectl create secret tls app-tls-secret --cert=tls.crt --key=tls.key</text>
+  <text x="24" y="400" font-size="11" fill="#37474f">Step 3 — Ingress references it by name:  secretName: app-tls-secret</text>
+</svg>

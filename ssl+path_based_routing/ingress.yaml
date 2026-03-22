@@ -1,0 +1,164 @@
+# =============================================================================
+# ingress.yaml
+# =============================================================================
+# PURPOSE:
+#   Defines SSL/TLS termination AND path-based routing rules for Nginx.
+#   This file has two key sections compared to plain path-based routing:
+#
+#   1. tls: block      — tells Nginx which Secret contains the certificate
+#   2. rules: block    — same path routing as before (/app1, /app2, /app3)
+#
+# WHAT NGINX DOES WITH THIS FILE:
+#   a) Reads the TLS Secret named "app-tls-secret" from Kubernetes
+#   b) Loads the certificate (tls.crt) and private key (tls.key) from it
+#   c) Starts listening on port 443 for HTTPS connections
+#   d) Performs TLS handshake with the browser using the loaded certificate
+#   e) Decrypts the HTTPS request into plain HTTP
+#   f) Reads the URL path and matches against the rules below
+#   g) Forwards plain HTTP to the correct Service and port
+#
+# PRE-REQUISITE — the TLS Secret MUST exist before applying this file:
+#   openssl req -x509 -nodes -days 365 -newkey rsa:2048 ^
+#     -keyout tls.key -out tls.crt -subj "/CN=127.0.0.1/O=LocalDev"
+#   kubectl create secret tls app-tls-secret --cert=tls.crt --key=tls.key
+#
+# IF THE SECRET IS MISSING:
+#   The Ingress resource is created but Nginx cannot load the certificate.
+#   kubectl describe ingress ssl-path-ingress will show an error event.
+#   HTTPS will not work until the Secret exists.
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+# networking.k8s.io/v1 is the stable API group for Ingress resources.
+# Always use v1 — v1beta1 is removed in Kubernetes 1.22+.
+
+kind: Ingress
+# Ingress defines HTTP/HTTPS routing rules.
+# The actual routing is performed by the Nginx controller that reads this.
+
+metadata:
+  name: ssl-path-ingress
+  # Name for this Ingress resource.
+  # Used in: kubectl describe ingress ssl-path-ingress
+
+  annotations:
+    # Annotations are key-value pairs that pass extra configuration to the
+    # Nginx controller. They are NOT standard Kubernetes fields — they are
+    # specific to the Nginx Ingress Controller.
+
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # ssl-redirect: "true" — automatically redirect HTTP → HTTPS.
+    # If a browser visits http://127.0.0.1/app1, Nginx returns:
+    #   301 Moved Permanently  Location: https://127.0.0.1/app1
+    # Set to "false" if you want to allow both HTTP and HTTPS.
+
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # rewrite-target: strips the path prefix before forwarding to the backend.
+    # Works together with the regex capture group in the path: field below.
+    #
+    # Example without rewrite:
+    #   Browser requests  GET /app1/products
+    #   Backend receives  GET /app1/products  ← backend must handle /app1/ prefix
+    #
+    # Example WITH rewrite:
+    #   Browser requests  GET /app1/products
+    #   Regex captures:   $1 = "/"   $2 = "products"
+    #   Backend receives  GET /products      ← cleaner, no prefix needed
+    #
+    # For simple testing with http-echo this does not matter.
+    # But for real apps, the backend should receive /products not /app1/products.
+
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # use-regex: "true" — enables regular expression matching in path: fields.
+    # Required because our paths use capture groups like (/|$)(.*).
+    # Without this, the parentheses are treated as literal characters, not regex.
+
+spec:
+  ingressClassName: nginx
+  # ingressClassName: selects which Ingress Controller owns this resource.
+  # "nginx" matches the controller installed by: minikube addons enable ingress
+  # Without this, the Ingress is ignored in Kubernetes 1.18+.
+
+  tls:
+  # tls: block — THIS IS WHAT MAKES IT SSL/HTTPS.
+  # Tells Nginx which Secret contains the TLS certificate and private key.
+  # Nginx loads this Secret and uses it for HTTPS handshakes.
+
+    - hosts:
+        - "127.0.0.1"
+        # The hostname(s) this certificate applies to.
+        # Must match the CN (Common Name) used when generating the certificate.
+        # We used -subj "/CN=127.0.0.1" so it must be 127.0.0.1 here.
+        # In production this would be your real domain: myapp.example.com
+
+      secretName: app-tls-secret
+      # The name of the Kubernetes Secret that contains tls.crt and tls.key.
+      # MUST exactly match the name used when running:
+      #   kubectl create secret tls app-tls-secret --cert=tls.crt --key=tls.key
+      # If this name is wrong or the Secret doesn't exist, HTTPS will not work.
+
+  rules:
+  # rules: the path-based routing rules — same as plain path-based routing.
+  # After TLS decryption, Nginx matches the URL path against these rules.
+
+    - http:
+      # We leave host: empty to match any hostname.
+      # In production you would add: host: myapp.example.com
+
+        paths:
+
+          # ── ROUTE 1: /app1 → app1-service ────────────────────────────────
+          - path: /app1(/|$)(.*)
+            # Regex path: matches /app1, /app1/, /app1/anything
+            # Capture groups:
+            #   $1 = the slash after /app1  (or empty string)
+            #   $2 = everything after that  (used in rewrite-target: /$2)
+
+            pathType: ImplementationSpecific
+            # ImplementationSpecific is required when using regex paths.
+            # Prefix pathType does not support regex capture groups.
+            # The Nginx controller interprets this path as a regex.
+
+            backend:
+              service:
+                name: app1-service
+                # Must exactly match metadata.name in services.yaml.
+                port:
+                  number: 80
+                  # Connect to app1-service on port 80.
+                  # Service then forwards to pod's containerPort 5678.
+
+          # ── ROUTE 2: /app2 → app2-service ────────────────────────────────
+          - path: /app2(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: app2-service
+                port:
+                  number: 80
+
+          # ── ROUTE 3: /app3 → app3-service ────────────────────────────────
+          - path: /app3(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: app3-service
+                port:
+                  number: 80
+
+# =============================================================================
+# SUMMARY OF WHAT HAPPENS FOR: curl -k https://127.0.0.1/app2/products
+#
+#   1. curl sends HTTPS request to 127.0.0.1:443
+#   2. minikube tunnel routes it to Nginx Ingress Controller
+#   3. Nginx performs TLS handshake using certificate from app-tls-secret
+#   4. curl receives cert → accepts it because of -k flag (skip verification)
+#   5. Nginx decrypts the request into plain HTTP
+#   6. Nginx reads path: /app2/products
+#   7. Regex /app2(/|$)(.*) matches — captures $1="/" $2="products"
+#   8. rewrite-target: /$2 rewrites path to: /products
+#   9. Nginx forwards GET /products to app2-service:80
+#   10. Service load balances between app2-pod-1 and app2-pod-2
+#   11. Pod responds: Hello from APP2
+#   12. Response travels back through Nginx → encrypted → back to curl
+# =============================================================================

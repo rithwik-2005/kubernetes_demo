@@ -1,0 +1,108 @@
+# =============================================================================
+# services.yaml
+# =============================================================================
+# PURPOSE:
+#   Creates 3 ClusterIP Services — one per app.
+#   Each Service uses a label selector to find its pods and load balance
+#   HTTP traffic between them.
+#
+# SSL NOTE:
+#   These Services handle plain HTTP, not HTTPS.
+#   TLS is terminated at the Ingress Controller before traffic reaches here.
+#   The flow is:
+#     Browser ──(HTTPS)──> Ingress ──(HTTP)──> Service ──(HTTP)──> Pod
+#
+#   The Service never sees encrypted traffic. It just routes plain HTTP to pods.
+#   This is the standard production pattern — you never TLS-encrypt internal
+#   cluster traffic between Ingress and Services.
+# =============================================================================
+
+
+# =============================================================================
+# SERVICE 1 — for APP1 pods
+# =============================================================================
+
+apiVersion: v1
+# v1 is the core Kubernetes API group for Services, Pods, ConfigMaps, Secrets.
+
+kind: Service
+# Service provides a stable IP and DNS name for a group of pods.
+# Pod IPs change when pods are recreated — Service IP never changes.
+
+metadata:
+  name: app1-service
+  # This name is referenced in ingress.yaml: backend.service.name: app1-service
+  # The Ingress controller forwards /app1 traffic to this Service by name.
+
+spec:
+  type: ClusterIP
+  # ClusterIP = only reachable from inside the cluster.
+  # The Ingress Controller (inside the cluster) connects to this.
+  # External traffic always enters through Ingress — never directly to Services.
+
+  selector:
+    app: app1
+    # Finds ALL pods labelled app=app1 across the entire cluster.
+    # Matches the label stamped on pods by app1-deployment in app-deployments.yaml.
+    # If pods are replaced or restart, Service automatically updates its endpoint list.
+
+  ports:
+    - protocol: TCP
+      port: 80
+      # The port exposed by this Service inside the cluster.
+      # Ingress forwards /app1 traffic to app1-service:80.
+      # Matches port.number: 80 in ingress.yaml.
+      targetPort: 5678
+      # The port on the container inside the pod.
+      # Service translates: Service:80 → Pod:5678.
+      # Must match containerPort: 5678 in app-deployments.yaml.
+
+---
+
+# =============================================================================
+# SERVICE 2 — for APP2 pods
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: app2-service
+  # Referenced in ingress.yaml for the /app2 path rule.
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: app2
+    # Finds pods labelled app=app2 — both pods sitting on node minikube-m02.
+
+  ports:
+    - protocol: TCP
+      port: 80
+      # Ingress forwards /app2 traffic to app2-service:80.
+      targetPort: 5678
+      # Service forwards to container port 5678.
+
+---
+
+# =============================================================================
+# SERVICE 3 — for APP3 pods
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: app3-service
+  # Referenced in ingress.yaml for the /app3 path rule.
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: app3
+    # Finds pods labelled app=app3 — both pods on node minikube-m03.
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5678

@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="680" viewBox="0 0 900 680" font-family="Arial, sans-serif">
+  <rect width="900" height="680" fill="#f8f9fa" rx="12"/>
+  <text x="450" y="34" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a2e">Kubernetes SSL + Path-Based Routing — Architecture</text>
+  <text x="450" y="54" text-anchor="middle" font-size="12" fill="#666">3 nodes · 2 pods per node · TLS termination at Ingress · Self-signed cert</text>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="inherit" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <!-- Browser -->
+  <rect x="290" y="70" width="320" height="52" rx="8" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text x="450" y="91" text-anchor="middle" font-size="13" font-weight="bold" fill="#283593">Browser / curl</text>
+  <text x="450" y="109" text-anchor="middle" font-size="11" fill="#3949ab">https://127.0.0.1/app1  ·  /app2  ·  /app3</text>
+
+  <!-- HTTPS lock badge -->
+  <rect x="634" y="76" width="80" height="28" rx="14" fill="#e8f5e9" stroke="#43a047" stroke-width="1.5"/>
+  <text x="674" y="94" text-anchor="middle" font-size="11" font-weight="bold" fill="#1b5e20">HTTPS</text>
+
+  <line x1="450" y1="122" x2="450" y2="150" stroke="#5c6bc0" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="480" y="140" font-size="10" fill="#888">minikube tunnel</text>
+
+  <!-- TLS Secret box -->
+  <rect x="20" y="150" width="200" height="62" rx="8" fill="#fff3e0" stroke="#ff9800" stroke-width="1.5"/>
+  <text x="120" y="170" text-anchor="middle" font-size="12" font-weight="bold" fill="#e65100">TLS Secret</text>
+  <text x="120" y="186" text-anchor="middle" font-size="10" fill="#bf360c">tls.crt  +  tls.key</text>
+  <text x="120" y="200" text-anchor="middle" font-size="10" fill="#bf360c">self-signed certificate</text>
+  <!-- Arrow secret to ingress -->
+  <line x1="220" y1="181" x2="298" y2="181" stroke="#ff9800" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr)"/>
+  <text x="259" y="175" text-anchor="middle" font-size="9" fill="#ff9800">mounted by</text>
+
+  <!-- Nginx Ingress -->
+  <rect x="100" y="150" width="700" height="62" rx="10" fill="#fce4ec" stroke="#e91e63" stroke-width="1.5"/>
+  <text x="450" y="171" text-anchor="middle" font-size="13" font-weight="bold" fill="#880e4f">Nginx Ingress Controller — TLS Termination + Path Routing</text>
+  <text x="260" y="194" text-anchor="middle" font-size="10" fill="#c2185b">decrypts HTTPS → HTTP</text>
+  <text x="450" y="194" text-anchor="middle" font-size="10" fill="#c2185b">/app1 → app1-svc   /app2 → app2-svc   /app3 → app3-svc</text>
+  <text x="680" y="194" text-anchor="middle" font-size="10" fill="#c2185b">forwards internally</text>
+
+  <!-- SSL explanation badge -->
+  <rect x="620" y="228" width="260" height="46" rx="8" fill="#e8f5e9" stroke="#43a047" stroke-width="1.5"/>
+  <text x="750" y="247" text-anchor="middle" font-size="11" font-weight="bold" fill="#1b5e20">TLS terminates here</text>
+  <text x="750" y="263" text-anchor="middle" font-size="10" fill="#2e7d32">pods receive plain HTTP internally</text>
+
+  <!-- Arrows ingress to 3 services -->
+  <line x1="220" y1="212" x2="150" y2="292" stroke="#e91e63" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="450" y1="212" x2="450" y2="292" stroke="#e91e63" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="580" y1="212" x2="580" y2="292" stroke="#e91e63" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Service 1 -->
+  <rect x="40" y="292" width="220" height="46" rx="8" fill="#ede7f6" stroke="#7e57c2" stroke-width="1.5"/>
+  <text x="150" y="312" text-anchor="middle" font-size="13" font-weight="bold" fill="#4527a0">app1-service</text>
+  <text x="150" y="328" text-anchor="middle" font-size="11" fill="#6a1b9a">ClusterIP · selector: app=app1</text>
+
+  <!-- Service 2 -->
+  <rect x="340" y="292" width="220" height="46" rx="8" fill="#e0f2f1" stroke="#009688" stroke-width="1.5"/>
+  <text x="450" y="312" text-anchor="middle" font-size="13" font-weight="bold" fill="#004d40">app2-service</text>
+  <text x="450" y="328" text-anchor="middle" font-size="11" fill="#00695c">ClusterIP · selector: app=app2</text>
+
+  <!-- Service 3 -->
+  <rect x="470" y="292" width="220" height="46" rx="8" fill="#fff8e1" stroke="#f9a825" stroke-width="1.5"/>
+  <text x="580" y="312" text-anchor="middle" font-size="13" font-weight="bold" fill="#e65100">app3-service</text>
+  <text x="580" y="328" text-anchor="middle" font-size="11" fill="#bf360c">ClusterIP · selector: app=app3</text>
+
+  <!-- Arrows services to nodes -->
+  <line x1="150" y1="338" x2="150" y2="386" stroke="#7e57c2" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="450" y1="338" x2="450" y2="386" stroke="#009688" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="580" y1="338" x2="720" y2="386" stroke="#f9a825" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- NODE 1 -->
+  <rect x="20" y="386" width="260" height="226" rx="14" fill="#f3e5f5" stroke="#7e57c2" stroke-width="2"/>
+  <text x="150" y="410" text-anchor="middle" font-size="13" font-weight="bold" fill="#4527a0">Node 1 — minikube</text>
+  <text x="150" y="428" text-anchor="middle" font-size="10" fill="#6a1b9a">hostname: minikube</text>
+  <rect x="38" y="442" width="100" height="68" rx="8" fill="#ce93d8" stroke="#7e57c2" stroke-width="1"/>
+  <text x="88" y="462" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a0030">app1 pod 1</text>
+  <text x="88" y="478" text-anchor="middle" font-size="10" fill="#2d003f">http-echo</text>
+  <text x="88" y="494" text-anchor="middle" font-size="10" fill="#2d003f">port: 5678</text>
+  <rect x="162" y="442" width="100" height="68" rx="8" fill="#ce93d8" stroke="#7e57c2" stroke-width="1"/>
+  <text x="212" y="462" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a0030">app1 pod 2</text>
+  <text x="212" y="478" text-anchor="middle" font-size="10" fill="#2d003f">http-echo</text>
+  <text x="212" y="494" text-anchor="middle" font-size="10" fill="#2d003f">port: 5678</text>
+  <rect x="48" y="524" width="204" height="20" rx="4" fill="#e1bee7"/>
+  <text x="150" y="538" text-anchor="middle" font-size="10" fill="#4a148c">replicas: 2 · label: app=app1</text>
+  <rect x="48" y="550" width="204" height="20" rx="4" fill="#d1c4e9"/>
+  <text x="150" y="564" text-anchor="middle" font-size="10" fill="#311b92">nodeSelector: minikube</text>
+  <rect x="48" y="576" width="204" height="20" rx="4" fill="#b39ddb"/>
+  <text x="150" y="590" text-anchor="middle" font-size="10" fill="#1a0050">receives plain HTTP</text>
+
+  <!-- NODE 2 -->
+  <rect x="320" y="386" width="260" height="226" rx="14" fill="#e0f2f1" stroke="#009688" stroke-width="2"/>
+  <text x="450" y="410" text-anchor="middle" font-size="13" font-weight="bold" fill="#004d40">Node 2 — minikube-m02</text>
+  <text x="450" y="428" text-anchor="middle" font-size="10" fill="#00695c">hostname: minikube-m02</text>
+  <rect x="338" y="442" width="100" height="68" rx="8" fill="#80cbc4" stroke="#009688" stroke-width="1"/>
+  <text x="388" y="462" text-anchor="middle" font-size="11" font-weight="bold" fill="#001a17">app2 pod 1</text>
+  <text x="388" y="478" text-anchor="middle" font-size="10" fill="#002920">http-echo</text>
+  <text x="388" y="494" text-anchor="middle" font-size="10" fill="#002920">port: 5678</text>
+  <rect x="462" y="442" width="100" height="68" rx="8" fill="#80cbc4" stroke="#009688" stroke-width="1"/>
+  <text x="512" y="462" text-anchor="middle" font-size="11" font-weight="bold" fill="#001a17">app2 pod 2</text>
+  <text x="512" y="478" text-anchor="middle" font-size="10" fill="#002920">http-echo</text>
+  <text x="512" y="494" text-anchor="middle" font-size="10" fill="#002920">port: 5678</text>
+  <rect x="348" y="524" width="204" height="20" rx="4" fill="#b2dfdb"/>
+  <text x="450" y="538" text-anchor="middle" font-size="10" fill="#004d40">replicas: 2 · label: app=app2</text>
+  <rect x="348" y="550" width="204" height="20" rx="4" fill="#80cbc4"/>
+  <text x="450" y="564" text-anchor="middle" font-size="10" fill="#00251a">nodeSelector: minikube-m02</text>
+  <rect x="348" y="576" width="204" height="20" rx="4" fill="#4db6ac"/>
+  <text x="450" y="590" text-anchor="middle" font-size="10" fill="#001a17">receives plain HTTP</text>
+
+  <!-- NODE 3 -->
+  <rect x="620" y="386" width="260" height="226" rx="14" fill="#fff8e1" stroke="#f9a825" stroke-width="2"/>
+  <text x="750" y="410" text-anchor="middle" font-size="13" font-weight="bold" fill="#e65100">Node 3 — minikube-m03</text>
+  <text x="750" y="428" text-anchor="middle" font-size="10" fill="#bf360c">hostname: minikube-m03</text>
+  <rect x="638" y="442" width="100" height="68" rx="8" fill="#ffe082" stroke="#f9a825" stroke-width="1"/>
+  <text x="688" y="462" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a0800">app3 pod 1</text>
+  <text x="688" y="478" text-anchor="middle" font-size="10" fill="#2d1200">http-echo</text>
+  <text x="688" y="494" text-anchor="middle" font-size="10" fill="#2d1200">port: 5678</text>
+  <rect x="762" y="442" width="100" height="68" rx="8" fill="#ffe082" stroke="#f9a825" stroke-width="1"/>
+  <text x="812" y="462" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a0800">app3 pod 2</text>
+  <text x="812" y="478" text-anchor="middle" font-size="10" fill="#2d1200">http-echo</text>
+  <text x="812" y="494" text-anchor="middle" font-size="10" fill="#2d1200">port: 5678</text>
+  <rect x="648" y="524" width="204" height="20" rx="4" fill="#ffecb3"/>
+  <text x="750" y="538" text-anchor="middle" font-size="10" fill="#e65100">replicas: 2 · label: app=app3</text>
+  <rect x="648" y="550" width="204" height="20" rx="4" fill="#ffe082"/>
+  <text x="750" y="564" text-anchor="middle" font-size="10" fill="#bf360c">nodeSelector: minikube-m03</text>
+  <rect x="648" y="576" width="204" height="20" rx="4" fill="#ffca28"/>
+  <text x="750" y="590" text-anchor="middle" font-size="10" fill="#3e2000">receives plain HTTP</text>
+
+  <!-- Legend -->
+  <rect x="20" y="628" width="860" height="36" rx="6" fill="#eceff1" stroke="#b0bec5" stroke-width="1"/>
+  <text x="450" y="650" text-anchor="middle" font-size="11" fill="#455a64">TLS terminates at Ingress · pods only receive plain HTTP · certificate stored as Kubernetes Secret · self-signed cert for local dev</text>
+</svg>
