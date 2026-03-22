@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620" viewBox="0 0 900 620" font-family="Arial, sans-serif">
+
+  <!-- Background -->
+  <rect width="900" height="620" fill="#f8f9fa" rx="12"/>
+
+  <!-- Title -->
+  <text x="450" y="36" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a2e">Kubernetes Path-Based Routing — Architecture</text>
+  <text x="450" y="56" text-anchor="middle" font-size="12" fill="#666">3 nodes · 2 pods per node · Nginx Ingress</text>
+
+  <!-- Browser -->
+  <rect x="330" y="76" width="240" height="44" rx="8" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+  <text x="450" y="97" text-anchor="middle" font-size="13" font-weight="bold" fill="#283593">Browser / curl</text>
+  <text x="450" y="112" text-anchor="middle" font-size="11" fill="#3949ab">http://127.0.0.1/app1  /app2  /app3</text>
+
+  <!-- Arrow browser to tunnel label -->
+  <line x1="450" y1="120" x2="450" y2="148" stroke="#5c6bc0" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="468" y="138" font-size="10" fill="#888">minikube tunnel</text>
+
+  <!-- Nginx Ingress box -->
+  <rect x="130" y="148" width="640" height="52" rx="10" fill="#fce4ec" stroke="#e91e63" stroke-width="1.5"/>
+  <text x="450" y="169" text-anchor="middle" font-size="13" font-weight="bold" fill="#880e4f">Nginx Ingress Controller</text>
+  <text x="450" y="188" text-anchor="middle" font-size="11" fill="#c2185b">/app1 → app1-service     /app2 → app2-service     /app3 → app3-service</text>
+
+  <!-- Arrows from ingress to 3 services -->
+  <line x1="240" y1="200" x2="175" y2="250" stroke="#e91e63" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="450" y1="200" x2="450" y2="250" stroke="#e91e63" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="660" y1="200" x2="725" y2="250" stroke="#e91e63" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Service 1 -->
+  <rect x="64" y="250" width="222" height="44" rx="8" fill="#ede7f6" stroke="#7e57c2" stroke-width="1.5"/>
+  <text x="175" y="270" text-anchor="middle" font-size="13" font-weight="bold" fill="#4527a0">app1-service</text>
+  <text x="175" y="286" text-anchor="middle" font-size="11" fill="#6a1b9a">ClusterIP  selector: app=app1</text>
+
+  <!-- Service 2 -->
+  <rect x="339" y="250" width="222" height="44" rx="8" fill="#e0f2f1" stroke="#009688" stroke-width="1.5"/>
+  <text x="450" y="270" text-anchor="middle" font-size="13" font-weight="bold" fill="#004d40">app2-service</text>
+  <text x="450" y="286" text-anchor="middle" font-size="11" fill="#00695c">ClusterIP  selector: app=app2</text>
+
+  <!-- Service 3 -->
+  <rect x="614" y="250" width="222" height="44" rx="8" fill="#fff8e1" stroke="#f9a825" stroke-width="1.5"/>
+  <text x="725" y="270" text-anchor="middle" font-size="13" font-weight="bold" fill="#e65100">app3-service</text>
+  <text x="725" y="286" text-anchor="middle" font-size="11" fill="#bf360c">ClusterIP  selector: app=app3</text>
+
+  <!-- Arrows services to nodes -->
+  <line x1="175" y1="294" x2="175" y2="344" stroke="#7e57c2" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="450" y1="294" x2="450" y2="344" stroke="#009688" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="725" y1="294" x2="725" y2="344" stroke="#f9a825" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- NODE 1 -->
+  <rect x="30" y="344" width="290" height="220" rx="14" fill="#f3e5f5" stroke="#7e57c2" stroke-width="2"/>
+  <text x="175" y="370" text-anchor="middle" font-size="13" font-weight="bold" fill="#4527a0">Node 1 — minikube</text>
+  <text x="175" y="388" text-anchor="middle" font-size="10" fill="#6a1b9a">kubernetes.io/hostname: minikube</text>
+  <!-- pod 1 -->
+  <rect x="50" y="402" width="110" height="70" rx="8" fill="#ce93d8" stroke="#7e57c2" stroke-width="1"/>
+  <text x="105" y="427" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a0030">app1 — pod 1</text>
+  <text x="105" y="445" text-anchor="middle" font-size="10" fill="#2d003f">hashicorp/http-echo</text>
+  <text x="105" y="461" text-anchor="middle" font-size="10" fill="#2d003f">port: 5678</text>
+  <!-- pod 2 -->
+  <rect x="190" y="402" width="110" height="70" rx="8" fill="#ce93d8" stroke="#7e57c2" stroke-width="1"/>
+  <text x="245" y="427" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a0030">app1 — pod 2</text>
+  <text x="245" y="445" text-anchor="middle" font-size="10" fill="#2d003f">hashicorp/http-echo</text>
+  <text x="245" y="461" text-anchor="middle" font-size="10" fill="#2d003f">port: 5678</text>
+  <!-- labels -->
+  <rect x="66" y="490" width="218" height="22" rx="4" fill="#e1bee7" stroke="none"/>
+  <text x="175" y="505" text-anchor="middle" font-size="10" fill="#4a148c">replicas: 2   label: app=app1</text>
+  <!-- nodeSelector badge -->
+  <rect x="66" y="520" width="218" height="22" rx="4" fill="#d1c4e9" stroke="none"/>
+  <text x="175" y="535" text-anchor="middle" font-size="10" fill="#311b92">nodeSelector: minikube</text>
+
+  <!-- NODE 2 -->
+  <rect x="305" y="344" width="290" height="220" rx="14" fill="#e0f2f1" stroke="#009688" stroke-width="2"/>
+  <text x="450" y="370" text-anchor="middle" font-size="13" font-weight="bold" fill="#004d40">Node 2 — minikube-m02</text>
+  <text x="450" y="388" text-anchor="middle" font-size="10" fill="#00695c">kubernetes.io/hostname: minikube-m02</text>
+  <!-- pod 1 -->
+  <rect x="325" y="402" width="110" height="70" rx="8" fill="#80cbc4" stroke="#009688" stroke-width="1"/>
+  <text x="380" y="427" text-anchor="middle" font-size="12" font-weight="bold" fill="#001a17">app2 — pod 1</text>
+  <text x="380" y="445" text-anchor="middle" font-size="10" fill="#002920">hashicorp/http-echo</text>
+  <text x="380" y="461" text-anchor="middle" font-size="10" fill="#002920">port: 5678</text>
+  <!-- pod 2 -->
+  <rect x="465" y="402" width="110" height="70" rx="8" fill="#80cbc4" stroke="#009688" stroke-width="1"/>
+  <text x="520" y="427" text-anchor="middle" font-size="12" font-weight="bold" fill="#001a17">app2 — pod 2</text>
+  <text x="520" y="445" text-anchor="middle" font-size="10" fill="#002920">hashicorp/http-echo</text>
+  <text x="520" y="461" text-anchor="middle" font-size="10" fill="#002920">port: 5678</text>
+  <!-- labels -->
+  <rect x="341" y="490" width="218" height="22" rx="4" fill="#b2dfdb" stroke="none"/>
+  <text x="450" y="505" text-anchor="middle" font-size="10" fill="#004d40">replicas: 2   label: app=app2</text>
+  <rect x="341" y="520" width="218" height="22" rx="4" fill="#80cbc4" stroke="none"/>
+  <text x="450" y="535" text-anchor="middle" font-size="10" fill="#00251a">nodeSelector: minikube-m02</text>
+
+  <!-- NODE 3 -->
+  <rect x="580" y="344" width="290" height="220" rx="14" fill="#fff8e1" stroke="#f9a825" stroke-width="2"/>
+  <text x="725" y="370" text-anchor="middle" font-size="13" font-weight="bold" fill="#e65100">Node 3 — minikube-m03</text>
+  <text x="725" y="388" text-anchor="middle" font-size="10" fill="#bf360c">kubernetes.io/hostname: minikube-m03</text>
+  <!-- pod 1 -->
+  <rect x="600" y="402" width="110" height="70" rx="8" fill="#ffe082" stroke="#f9a825" stroke-width="1"/>
+  <text x="655" y="427" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a0800">app3 — pod 1</text>
+  <text x="655" y="445" text-anchor="middle" font-size="10" fill="#2d1200">hashicorp/http-echo</text>
+  <text x="655" y="461" text-anchor="middle" font-size="10" fill="#2d1200">port: 5678</text>
+  <!-- pod 2 -->
+  <rect x="740" y="402" width="110" height="70" rx="8" fill="#ffe082" stroke="#f9a825" stroke-width="1"/>
+  <text x="795" y="427" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a0800">app3 — pod 2</text>
+  <text x="795" y="445" text-anchor="middle" font-size="10" fill="#2d1200">hashicorp/http-echo</text>
+  <text x="795" y="461" text-anchor="middle" font-size="10" fill="#2d1200">port: 5678</text>
+  <!-- labels -->
+  <rect x="616" y="490" width="218" height="22" rx="4" fill="#ffecb3" stroke="none"/>
+  <text x="725" y="505" text-anchor="middle" font-size="10" fill="#e65100">replicas: 2   label: app=app3</text>
+  <rect x="616" y="520" width="218" height="22" rx="4" fill="#ffe082" stroke="none"/>
+  <text x="725" y="535" text-anchor="middle" font-size="10" fill="#bf360c">nodeSelector: minikube-m03</text>
+
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke-width="1.5" stroke="inherit" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Bottom legend -->
+  <rect x="30" y="580" width="840" height="28" rx="6" fill="#eceff1" stroke="#b0bec5" stroke-width="1"/>
+  <text x="450" y="598" text-anchor="middle" font-size="11" fill="#455a64">nodeSelector pins pods to a specific node  ·  label selector connects Service to pods  ·  Ingress routes by URL path</text>
+
+</svg>

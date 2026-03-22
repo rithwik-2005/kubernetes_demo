@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="340" viewBox="0 0 900 340" font-family="Arial, sans-serif">
+
+  <rect width="900" height="340" fill="#f8f9fa" rx="12"/>
+
+  <text x="450" y="32" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a1a2e">Request Flow — How a Request Travels from Browser to Pod</text>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <!-- Step boxes -->
+  <!-- 1: Browser -->
+  <rect x="20" y="80" width="130" height="64" rx="8" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="2"/>
+  <text x="85" y="105" text-anchor="middle" font-size="12" font-weight="bold" fill="#283593">1. Browser</text>
+  <text x="85" y="121" text-anchor="middle" font-size="10" fill="#3949ab">GET /app2</text>
+  <text x="85" y="136" text-anchor="middle" font-size="10" fill="#3949ab">127.0.0.1</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="150" y1="112" x2="188" y2="112" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="169" y="107" text-anchor="middle" font-size="9" fill="#888">tunnel</text>
+
+  <!-- 2: Ingress -->
+  <rect x="188" y="80" width="150" height="64" rx="8" fill="#fce4ec" stroke="#e91e63" stroke-width="2"/>
+  <text x="263" y="102" text-anchor="middle" font-size="12" font-weight="bold" fill="#880e4f">2. Nginx Ingress</text>
+  <text x="263" y="118" text-anchor="middle" font-size="10" fill="#c2185b">reads rules</text>
+  <text x="263" y="133" text-anchor="middle" font-size="10" fill="#c2185b">/app2 → app2-svc</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="338" y1="112" x2="376" y2="112" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="357" y="107" text-anchor="middle" font-size="9" fill="#888">:80</text>
+
+  <!-- 3: Service -->
+  <rect x="376" y="80" width="150" height="64" rx="8" fill="#e0f2f1" stroke="#009688" stroke-width="2"/>
+  <text x="451" y="102" text-anchor="middle" font-size="12" font-weight="bold" fill="#004d40">3. app2-service</text>
+  <text x="451" y="118" text-anchor="middle" font-size="10" fill="#00695c">selector: app=app2</text>
+  <text x="451" y="133" text-anchor="middle" font-size="10" fill="#00695c">load balances</text>
+
+  <!-- Arrow 3→4a -->
+  <line x1="526" y1="100" x2="620" y2="80" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="574" y="81" text-anchor="middle" font-size="9" fill="#888">:5678</text>
+
+  <!-- Arrow 3→4b -->
+  <line x1="526" y1="124" x2="620" y2="144" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="574" y="143" text-anchor="middle" font-size="9" fill="#888">:5678</text>
+
+  <!-- 4a: Pod 1 -->
+  <rect x="620" y="54" width="130" height="64" rx="8" fill="#80cbc4" stroke="#009688" stroke-width="2"/>
+  <text x="685" y="76" text-anchor="middle" font-size="12" font-weight="bold" fill="#001a17">4a. app2 pod 1</text>
+  <text x="685" y="92" text-anchor="middle" font-size="10" fill="#002920">node: minikube-m02</text>
+  <text x="685" y="107" text-anchor="middle" font-size="10" fill="#002920">Hello from APP2</text>
+
+  <!-- 4b: Pod 2 -->
+  <rect x="620" y="130" width="130" height="64" rx="8" fill="#80cbc4" stroke="#009688" stroke-width="2"/>
+  <text x="685" y="152" text-anchor="middle" font-size="12" font-weight="bold" fill="#001a17">4b. app2 pod 2</text>
+  <text x="685" y="168" text-anchor="middle" font-size="10" fill="#002920">node: minikube-m02</text>
+  <text x="685" y="183" text-anchor="middle" font-size="10" fill="#002920">Hello from APP2</text>
+
+  <!-- Step annotations below -->
+  <rect x="20" y="165" width="130" height="40" rx="4" fill="#e8eaf6" stroke="none"/>
+  <text x="85" y="181" text-anchor="middle" font-size="10" fill="#283593">User types URL</text>
+  <text x="85" y="196" text-anchor="middle" font-size="10" fill="#283593">in browser</text>
+
+  <rect x="188" y="165" width="150" height="40" rx="4" fill="#fce4ec" stroke="none"/>
+  <text x="263" y="181" text-anchor="middle" font-size="10" fill="#880e4f">Controller matches</text>
+  <text x="263" y="196" text-anchor="middle" font-size="10" fill="#880e4f">/app2 path rule</text>
+
+  <rect x="376" y="165" width="150" height="40" rx="4" fill="#e0f2f1" stroke="none"/>
+  <text x="451" y="181" text-anchor="middle" font-size="10" fill="#004d40">Finds pods by label</text>
+  <text x="451" y="196" text-anchor="middle" font-size="10" fill="#004d40">round-robin between them</text>
+
+  <rect x="620" y="207" width="130" height="40" rx="4" fill="#e0f2f1" stroke="none"/>
+  <text x="685" y="223" text-anchor="middle" font-size="10" fill="#004d40">One pod responds</text>
+  <text x="685" y="238" text-anchor="middle" font-size="10" fill="#004d40">Hello from APP2</text>
+
+  <!-- Key concept box -->
+  <rect x="20" y="255" width="860" height="68" rx="8" fill="#eceff1" stroke="#b0bec5" stroke-width="1"/>
+  <text x="450" y="276" text-anchor="middle" font-size="12" font-weight="bold" fill="#263238">Key concepts</text>
+  <text x="40" y="296" font-size="11" fill="#37474f">nodeSelector  —  forces both pods onto node 2 (minikube-m02). Service finds them by label regardless of node.</text>
+  <text x="40" y="314" font-size="11" fill="#37474f">selector: app=app2  —  Service automatically finds all pods with this label and load balances traffic between them.</text>
+
+</svg>
