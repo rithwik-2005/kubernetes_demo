@@ -1,0 +1,111 @@
+# =============================================================================
+# services.yaml
+# =============================================================================
+# PURPOSE:
+#   Creates 3 ClusterIP Services — one per store.
+#   Each Service uses a label selector to find its pods and load balance
+#   traffic between them.
+#
+# IMPORTANT NOTE FOR HOST-BASED ROUTING:
+#   These Services are identical in structure to path-based routing Services.
+#   The host-based logic is entirely in ingress.yaml — not here.
+#   The Service just finds pods by label and forwards traffic to them.
+#   It has no concept of hostnames.
+#
+# HOW THE CHAIN WORKS:
+#   wear.example.com → Ingress reads host header → wear-service:80
+#                   → Service finds pods with app=wear → pod responds
+# =============================================================================
+
+
+# =============================================================================
+# SERVICE 1 — WEAR STORE
+# =============================================================================
+
+apiVersion: v1
+# v1 is the core Kubernetes API group used for Services, Pods, ConfigMaps etc.
+# Note: no "apps/" prefix — that is only for Deployments and StatefulSets.
+
+kind: Service
+# Service gives a stable internal IP and DNS name to a group of pods.
+# Even if pods are replaced and get new IPs, the Service IP never changes.
+
+metadata:
+  name: wear-service
+  # This name is referenced in ingress.yaml under backend.service.name.
+  # Must match exactly — Ingress controller uses it to find this Service.
+
+spec:
+  type: ClusterIP
+  # ClusterIP = Service is only reachable from inside the cluster.
+  # The Nginx Ingress Controller (also inside the cluster) talks to it.
+  # We never expose this Service directly to the outside world.
+  # Ingress is the only entry point for external traffic.
+
+  selector:
+    app: wear
+    # Finds ALL pods in the cluster that have the label app=wear.
+    # These are the 2 pods on node "minikube" created by wear-deployment.
+    # Service continuously watches for pods with this label.
+    # If a pod dies and is replaced, Service automatically updates its list.
+
+  ports:
+    - protocol: TCP
+      port: 80
+      # Port that the Ingress controller connects to on this Service.
+      # Referenced in ingress.yaml as port.number: 80.
+      targetPort: 5678
+      # Port the container inside the pod is actually listening on.
+      # Must match containerPort in app-deployments.yaml (5678 for http-echo).
+      # Service translates: incoming port 80 → pod's port 5678.
+
+---
+
+# =============================================================================
+# SERVICE 2 — WATCH STORE
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: watch-service
+  # Referenced in ingress.yaml for the watch.example.com rule.
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: watch
+    # Finds pods with label app=watch — both pods on node minikube-m02.
+    # Service does not care which node the pods are on — only the label matters.
+
+  ports:
+    - protocol: TCP
+      port: 80
+      # Ingress sends watch.example.com traffic to watch-service:80.
+      targetPort: 5678
+      # Service forwards it to the container's port 5678.
+
+---
+
+# =============================================================================
+# SERVICE 3 — BOOKS STORE
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: books-service
+  # Referenced in ingress.yaml for the books.example.com rule.
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: books
+    # Finds pods with label app=books — both pods on node minikube-m03.
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5678

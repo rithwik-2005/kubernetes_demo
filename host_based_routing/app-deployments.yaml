@@ -1,0 +1,214 @@
+# =============================================================================
+# app-deployments.yaml
+# =============================================================================
+# PURPOSE:
+#   Creates 3 Deployments — one per store (wear, watch, books).
+#   Each Deployment pins its 2 pods to one specific node using nodeSelector.
+#   The app name in labels must match the selector in services.yaml exactly.
+#
+# NODE LAYOUT AFTER APPLYING THIS FILE:
+#   minikube      (node 1) → wear-pod-1  + wear-pod-2
+#   minikube-m02  (node 2) → watch-pod-1 + watch-pod-2
+#   minikube-m03  (node 3) → books-pod-1 + books-pod-2
+#
+# DIFFERENCE FROM PATH-BASED ROUTING:
+#   The YAML for Deployments and Services is identical in structure.
+#   The only difference is in ingress.yaml — host: field instead of path: field.
+#   That means the host-based routing logic lives entirely in the Ingress resource.
+# =============================================================================
+
+
+# =============================================================================
+# DEPLOYMENT 1 — WEAR STORE — pinned to node: minikube
+# =============================================================================
+
+apiVersion: apps/v1
+# apps/v1 is the API group required for Deployment resources.
+
+kind: Deployment
+# Deployment manages pods and ensures the desired number always run.
+# If a pod crashes, Deployment automatically creates a replacement.
+
+metadata:
+  name: wear-deployment
+  # Unique name for this Deployment in the cluster.
+
+  labels:
+    app: wear
+    # Label on the Deployment object itself — not the pods.
+
+spec:
+  replicas: 2
+  # Create 2 pods. Both will land on node "minikube" because of nodeSelector.
+
+  selector:
+    matchLabels:
+      app: wear
+    # This Deployment manages pods that have the label app=wear.
+    # MUST match the labels in template.metadata.labels below.
+
+  template:
+    # Blueprint for every pod this Deployment creates.
+
+    metadata:
+      labels:
+        app: wear
+        # Every pod gets this label stamped on it.
+        # wear-service in services.yaml uses selector: app=wear to find these pods.
+
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: minikube
+        # kubernetes.io/hostname is a built-in label on every Kubernetes node.
+        # Its value equals the exact node name.
+        # This pins BOTH pods to the node named "minikube" (node 1).
+
+      containers:
+        - name: wear-container
+          image: hashicorp/http-echo
+          # Lightweight Docker image that returns a plain text HTTP response.
+          # No need to build your own image for testing routing.
+
+          args:
+            - "-text=Hello from Wear Store!"
+            # The text body returned by this container for any HTTP request.
+            # This identifies which store responded during testing.
+
+          ports:
+            - containerPort: 5678
+              # Port the container listens on inside the pod.
+              # http-echo defaults to 5678.
+              # Must match targetPort in services.yaml.
+
+          readinessProbe:
+            # Kubernetes will not send traffic to this pod until this probe passes.
+            # Prevents routing to pods still starting up.
+            httpGet:
+              path: /
+              port: 5678
+            initialDelaySeconds: 5
+            # Wait 5 seconds after container starts before first health check.
+            periodSeconds: 10
+            # Re-check every 10 seconds to confirm the pod stays healthy.
+
+          resources:
+            requests:
+              cpu: "50m"
+              # 50 millicores minimum CPU guaranteed to this container.
+              memory: "64Mi"
+              # 64 MiB minimum RAM guaranteed to this container.
+            limits:
+              cpu: "200m"
+              # Pod is throttled if it tries to use more than 200 millicores.
+              memory: "128Mi"
+              # Pod is killed and restarted if it exceeds 128 MiB RAM.
+
+---
+# --- separates multiple resource definitions in the same file.
+
+
+# =============================================================================
+# DEPLOYMENT 2 — WATCH STORE — pinned to node: minikube-m02
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: watch-deployment
+  labels:
+    app: watch
+spec:
+  replicas: 2
+  # 2 pods — both will land on minikube-m02 because of nodeSelector below.
+
+  selector:
+    matchLabels:
+      app: watch
+      # Manages pods with label app=watch.
+
+  template:
+    metadata:
+      labels:
+        app: watch
+        # Pods get label app=watch — watch-service uses this to find them.
+
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: minikube-m02
+        # Pins BOTH pods to node 2 (minikube-m02).
+
+      containers:
+        - name: watch-container
+          image: hashicorp/http-echo
+          args:
+            - "-text=Hello from Watch Store!"
+            # Identifies this store in test responses.
+          ports:
+            - containerPort: 5678
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5678
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+
+---
+
+# =============================================================================
+# DEPLOYMENT 3 — BOOKS STORE — pinned to node: minikube-m03
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: books-deployment
+  labels:
+    app: books
+spec:
+  replicas: 2
+  # 2 pods — both will land on minikube-m03 because of nodeSelector below.
+
+  selector:
+    matchLabels:
+      app: books
+      # Manages pods with label app=books.
+
+  template:
+    metadata:
+      labels:
+        app: books
+        # Pods get label app=books — books-service uses this to find them.
+
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: minikube-m03
+        # Pins BOTH pods to node 3 (minikube-m03).
+
+      containers:
+        - name: books-container
+          image: hashicorp/http-echo
+          args:
+            - "-text=Hello from Books Store!"
+            # Identifies this store in test responses.
+          ports:
+            - containerPort: 5678
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5678
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"

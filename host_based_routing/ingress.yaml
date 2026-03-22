@@ -1,0 +1,139 @@
+# =============================================================================
+# ingress.yaml
+# =============================================================================
+# PURPOSE:
+#   Defines host-based routing rules for the Nginx Ingress Controller.
+#   Instead of matching by URL path, we match by the HTTP Host header.
+#   Each domain name maps to a different Service inside the cluster.
+#
+# THIS IS THE KEY FILE — the only difference from path-based routing:
+#
+#   Path-based ingress.yaml:         Host-based ingress.yaml (this file):
+#   ─────────────────────────        ──────────────────────────────────────
+#   rules:                           rules:
+#     - http:                          - host: wear.example.com   ← hostname
+#         paths:                           http:
+#           - path: /app1                    paths:
+#             backend: app1-svc               - path: /
+#                                               backend: wear-svc
+#
+#   Nginx checks: URL path           Nginx checks: Host header in request
+#
+# HOW IT WORKS:
+#   1. Browser sends: GET / HTTP/1.1  Host: watch.example.com
+#   2. Nginx reads the Host header value: watch.example.com
+#   3. Nginx finds the rule where host: watch.example.com
+#   4. Nginx forwards to watch-service:80 inside the cluster
+#   5. Service load balances between watch-pod-1 and watch-pod-2
+#   6. Pod responds: Hello from Watch Store!
+#
+# WHY /etc/hosts IS NEEDED:
+#   wear.example.com is not a real domain. Your OS must resolve it to an IP.
+#   Add to C:\Windows\System32\drivers\etc\hosts (as Administrator):
+#     127.0.0.1  wear.example.com
+#     127.0.0.1  watch.example.com
+#     127.0.0.1  books.example.com
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+# networking.k8s.io/v1 is the stable API group for Ingress resources.
+# Always use v1 — v1beta1 is removed in modern Kubernetes versions.
+
+kind: Ingress
+# Ingress defines HTTP routing rules for traffic entering the cluster.
+# It is just configuration — the Nginx controller reads it and acts on it.
+
+metadata:
+  name: host-based-ingress
+  # Name of this Ingress resource. Used in: kubectl describe ingress host-based-ingress
+
+spec:
+  ingressClassName: nginx
+  # ingressClassName: selects which Ingress Controller owns this resource.
+  # "nginx" matches the class installed by: minikube addons enable ingress
+  # Without this, the Ingress resource is ignored in modern Kubernetes clusters.
+
+  rules:
+  # rules: the list of host-based routing rules.
+  # Each rule has a host: field — this is the key difference from path-based routing.
+  # Nginx matches the incoming request's Host header against these host: values.
+
+  # ── RULE 1: wear.example.com → wear-service ────────────────────────────────
+  - host: wear.example.com
+    # host: the domain name to match.
+    # Nginx reads the Host: header sent by the browser.
+    # If it equals "wear.example.com", this rule applies.
+    # Must match EXACTLY — case-sensitive, no trailing slash.
+
+    http:
+      paths:
+        - path: /
+          # path: / means match all paths under this host.
+          # Unlike path-based routing where different paths go to different services,
+          # in host-based routing ALL traffic for this host goes to one service.
+          # So we use / to catch everything.
+
+          pathType: Prefix
+          # Prefix: matches / and any path that starts with /
+          # So /products, /cart, /about all route to wear-service.
+          # This makes wear.example.com act like a complete website.
+
+          backend:
+            service:
+              name: wear-service
+              # Must exactly match metadata.name in services.yaml.
+              port:
+                number: 80
+                # Connect to wear-service on port 80.
+                # Service then forwards to containerPort 5678.
+
+  # ── RULE 2: watch.example.com → watch-service ──────────────────────────────
+  - host: watch.example.com
+    # Any request with Host: watch.example.com is handled by this rule.
+    # Completely isolated from wear.example.com — different pods, different node.
+
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: watch-service
+              port:
+                number: 80
+
+  # ── RULE 3: books.example.com → books-service ──────────────────────────────
+  - host: books.example.com
+    # Any request with Host: books.example.com is handled by this rule.
+
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: books-service
+              port:
+                number: 80
+
+# =============================================================================
+# WHAT HAPPENS IF THE HOST HEADER DOES NOT MATCH ANY RULE?
+#   If someone visits http://unknown.example.com, Nginx finds no matching rule
+#   and returns 404 Not Found.
+#
+#   To handle unknown hosts with a default fallback, add at spec level:
+#   defaultBackend:
+#     service:
+#       name: wear-service    # fallback to any service you choose
+#       port:
+#         number: 80
+#
+# COMBINING HOST AND PATH IN THE SAME RULE:
+#   You can also route different paths of the same host to different services:
+#
+#   - host: wear.example.com
+#       paths:
+#         - path: /mens       backend: mens-service
+#         - path: /womens     backend: womens-service
+#         - path: /           backend: wear-service   (catch-all, must be last)
+# =============================================================================

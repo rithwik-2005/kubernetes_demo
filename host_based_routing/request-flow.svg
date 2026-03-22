@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="380" viewBox="0 0 900 380" font-family="Arial, sans-serif">
+
+  <rect width="900" height="380" fill="#f8f9fa" rx="12"/>
+  <text x="450" y="32" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a1a2e">Request Flow — How Host Header Decides the Route</text>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <!-- Step 1: Browser -->
+  <rect x="14" y="72" width="148" height="72" rx="8" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="2"/>
+  <text x="88" y="96" text-anchor="middle" font-size="12" font-weight="bold" fill="#283593">1. Browser</text>
+  <text x="88" y="114" text-anchor="middle" font-size="10" fill="#3949ab">GET /</text>
+  <text x="88" y="130" text-anchor="middle" font-size="10" fill="#3949ab">Host: watch.example.com</text>
+
+  <line x1="162" y1="108" x2="196" y2="108" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="179" y="102" text-anchor="middle" font-size="9" fill="#888">tunnel</text>
+
+  <!-- Step 2: Ingress reads Host header -->
+  <rect x="196" y="72" width="178" height="72" rx="8" fill="#fce4ec" stroke="#e91e63" stroke-width="2"/>
+  <text x="285" y="96" text-anchor="middle" font-size="12" font-weight="bold" fill="#880e4f">2. Nginx Ingress</text>
+  <text x="285" y="114" text-anchor="middle" font-size="10" fill="#c2185b">reads Host header</text>
+  <text x="285" y="130" text-anchor="middle" font-size="10" fill="#c2185b">matches watch.example.com</text>
+
+  <line x1="374" y1="108" x2="408" y2="108" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="391" y="102" text-anchor="middle" font-size="9" fill="#888">:80</text>
+
+  <!-- Step 3: Service -->
+  <rect x="408" y="72" width="178" height="72" rx="8" fill="#e0f2f1" stroke="#009688" stroke-width="2"/>
+  <text x="497" y="96" text-anchor="middle" font-size="12" font-weight="bold" fill="#004d40">3. watch-service</text>
+  <text x="497" y="114" text-anchor="middle" font-size="10" fill="#00695c">selector: app=watch</text>
+  <text x="497" y="130" text-anchor="middle" font-size="10" fill="#00695c">load balances</text>
+
+  <!-- Arrows to pods -->
+  <line x1="586" y1="90" x2="660" y2="72" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="586" y1="126" x2="660" y2="144" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="624" y="87" text-anchor="middle" font-size="9" fill="#888">:5678</text>
+  <text x="624" y="148" text-anchor="middle" font-size="9" fill="#888">:5678</text>
+
+  <!-- Pod 1 -->
+  <rect x="660" y="50" width="136" height="56" rx="8" fill="#80cbc4" stroke="#009688" stroke-width="2"/>
+  <text x="728" y="72" text-anchor="middle" font-size="12" font-weight="bold" fill="#001a17">watch — pod 1</text>
+  <text x="728" y="90" text-anchor="middle" font-size="10" fill="#002920">Hello from Watch Store!</text>
+
+  <!-- Pod 2 -->
+  <rect x="660" y="122" width="136" height="56" rx="8" fill="#80cbc4" stroke="#009688" stroke-width="2"/>
+  <text x="728" y="144" text-anchor="middle" font-size="12" font-weight="bold" fill="#001a17">watch — pod 2</text>
+  <text x="728" y="162" text-anchor="middle" font-size="10" fill="#002920">Hello from Watch Store!</text>
+
+  <!-- /etc/hosts explanation -->
+  <rect x="14" y="170" width="860" height="80" rx="8" fill="#fff3e0" stroke="#ff9800" stroke-width="1.5"/>
+  <text x="450" y="192" text-anchor="middle" font-size="13" font-weight="bold" fill="#e65100">Why /etc/hosts is required for host-based routing</text>
+  <text x="30" y="214" font-size="11" fill="#bf360c">Path-based routing:  browser sends  GET /app1  →  Nginx matches the path  →  no DNS lookup needed for local testing</text>
+  <text x="30" y="232" font-size="11" fill="#bf360c">Host-based routing:  browser sends  Host: watch.example.com  →  your OS must resolve that hostname to an IP first</text>
+  <text x="30" y="250" font-size="11" fill="#bf360c">Solution: add  127.0.0.1 watch.example.com  to /etc/hosts so your OS sends the request to 127.0.0.1 (the tunnel)</text>
+
+  <!-- Key difference box -->
+  <rect x="14" y="270" width="860" height="90" rx="8" fill="#eceff1" stroke="#b0bec5" stroke-width="1"/>
+  <text x="450" y="292" text-anchor="middle" font-size="13" font-weight="bold" fill="#263238">Path-based vs Host-based — the difference</text>
+  <text x="30" y="314" font-size="11" fill="#37474f">Path-based:   ONE domain, MANY services.    http://127.0.0.1/app1  ·  /app2  ·  /app3</text>
+  <text x="30" y="332" font-size="11" fill="#37474f">Host-based:   MANY domains, MANY services.  http://wear.example.com  ·  http://watch.example.com</text>
+  <text x="30" y="350" font-size="11" fill="#37474f">Nginx reads:  URL path  (path-based)  vs  Host: header  (host-based)  to decide where to route</text>
+
+</svg>
